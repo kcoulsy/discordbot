@@ -1,5 +1,4 @@
 const Discord = require("discord.js");
-// const axios = require("axios");
 
 const botconfig = require("./botconfig.json");
 
@@ -11,7 +10,7 @@ const RSVP_ACCEPT = "✅";
 const RSVP_MAYBE = "❔";
 const RSVP_DECLINE = "❌";
 
-let classRoles = [
+const classRoles = [
   "Warrior",
   "Paladin",
   "Hunter",
@@ -22,13 +21,65 @@ let classRoles = [
   "Warlock"
 ];
 
-let specRoles = ["Tank", "Healer", "Damage"];
+const specRoles = ["Tank", "Healer", "Damage"];
 
+const raidMap = {
+  ony: {
+    name: `Onyxia's Lair`,
+    color: 0x851651,
+    img:
+      "https://wow.zamimg.com/images/wow/icons/large/achievement_boss_onyxia.jpg"
+  },
+  mc: {
+    name: `Molten Core`,
+    color: 0xceb410,
+    img:
+      "https://wow.zamimg.com/images/wow/icons/large/achievement_boss_ragnaros.jpg"
+  },
+  bwl: {
+    name: `Blackwing Lair`,
+    color: 0xa5572f,
+    img:
+      "https://wow.zamimg.com/images/wow/icons/large/achievement_boss_nefarion.jpg"
+  },
+  zg: {
+    name: `Zul Gurub`,
+    color: 0x1ba23a,
+    img:
+      "https://wow.zamimg.com/images/wow/icons/large/achievement_boss_hakkar.jpg"
+  },
+  aq20: {
+    name: `AQ20`,
+    color: 0xdad26c,
+    img:
+      "https://wow.zamimg.com/images/wow/icons/large/achievement_boss_ossiriantheunscarred.jpg"
+  },
+  aq40: {
+    name: `AQ40`,
+    color: 0xda6c96,
+    img:
+      "https://wow.zamimg.com/images/wow/icons/large/achievement_boss_cthun.jpg"
+  },
+  naxx: {
+    name: `Naxxramas`,
+    color: 0x5f62ac,
+    img:
+      "https://wow.zamimg.com/images/wow/icons/large/achievement_dungeon_naxxramas_normal.jpg"
+  },
+  pvp: {
+    name: "PVP",
+    color: 0x3977c1,
+    img: "https://wow.zamimg.com/images/wow/icons/large/inv_bannerpvp_02.jpg"
+  },
+  other: {
+    name: "",
+    color: 0x31d8d3,
+    img:
+      "https://wow.zamimg.com/images/wow/icons/large/spell_nature_wispsplode.jpg"
+  }
+};
 let classRoleMap = {};
 let specRoleMap = {};
-
-let eventStore = [];
-
 let botEventStore = [];
 
 bot.on("ready", () => {
@@ -45,6 +96,9 @@ bot.on("ready", () => {
   });
 
   console.log(`Logged in as ${bot.user.tag}!`);
+  bot.channels
+    .find("name", "bot-commands")
+    .send("Bot restarted. Events may be lost.");
   bot.user.setActivity("#help");
 });
 
@@ -52,26 +106,39 @@ bot.on("message", msg => {
   let prefix = botconfig.prefix;
   let msgArray = msg.content.split(" ");
   let cmd = msgArray[0];
-  let args = msgArray.slice(1);
+  let raid = msgArray[1];
+  let args = msgArray.slice(2);
 
   switch (cmd) {
     case `${prefix}newevent`:
-      eventStore.push({});
-      botEventStore.push(new BotEvent({ id: botEventStore.length }));
+      if (!raidMap[raid]) {
+        msg.channel.send(`The format is $newevent {eventtype} {text}
+Valid eventtypes : ${Object.keys(raidMap).join(" ")}
+        `);
+        return;
+      }
+      botEventStore.push(
+        new BotEvent({ id: botEventStore.length, event: raidMap[raid] })
+      );
       let eventembed = new Discord.RichEmbed()
-      .setThumbnail('https://i.gyazo.com/5f9ed3d6298a3bc0b46f15808ec6a659.png')
-      .setColor(0x52A030)
-      .addField(
-        `Event #${eventStore.length - 1} - ${args.join(" ")}`,
-        generateMessage({})
-      )
-      msg.channel.send(eventembed).then(sentMsg => {
-        Promise.all([
-          sentMsg.react(RSVP_ACCEPT),
-          sentMsg.react(RSVP_MAYBE),
-          sentMsg.react(RSVP_DECLINE)
-        ]);
-      });
+        .setThumbnail(raidMap[raid].img)
+        .setColor(raidMap[raid].color)
+        .addField(
+          `Event #${botEventStore.length - 1} ${
+            raidMap[raid].name
+          } - ${args.join(" ")}`,
+          generateMessage({})
+        );
+      bot.channels
+        .find("name", "events")
+        .send(eventembed)
+        .then(sentMsg => {
+          Promise.all([
+            sentMsg.react(RSVP_ACCEPT),
+            sentMsg.react(RSVP_MAYBE),
+            sentMsg.react(RSVP_DECLINE)
+          ]);
+        });
       break;
     default:
       break;
@@ -79,13 +146,15 @@ bot.on("message", msg => {
 });
 
 bot.on("messageReactionAdd", (reaction, user) => {
+  if (reaction.message.channel.name !== "events") {
+    return;
+  }
   let title = reaction.message.embeds[0].fields[0].name;
   let id = title.match(/#(\d+)/)[1];
   if (user.bot) {
     return;
   }
   reaction.message.guild.fetchMember(user.id).then(user => {
-
     let userObj = {
       id: user.id,
       user,
@@ -100,7 +169,13 @@ bot.on("messageReactionAdd", (reaction, user) => {
         userObj.playerClass = classRoleMap[roleId];
       }
     });
-
+    if (!userObj.playerRole || !userObj.playerClass) {
+      console.log(userObj);
+      user.sendMessage(
+        "You need to pick a class and role to sign up to an event. You can do this in the #role-assign channel of the discord"
+      );
+      return;
+    }
     switch (reaction._emoji.name) {
       case RSVP_ACCEPT:
         botEventStore[id].addPlayer(
@@ -121,13 +196,9 @@ bot.on("messageReactionAdd", (reaction, user) => {
 
     reaction.message.edit(
       new Discord.RichEmbed()
-      .setThumbnail('https://i.gyazo.com/5f9ed3d6298a3bc0b46f15808ec6a659.png')
-      .setColor(0x52A030)
-      .addField(
-        title,
-        generateMessage(botEventStore[id].store)
-      )
-      
+        .setThumbnail(botEventStore[id].event.img)
+        .setColor(botEventStore[id].event.color)
+        .addField(title, generateMessage(botEventStore[id].store))
     );
   });
 });
@@ -173,10 +244,3 @@ ${generateRoleMessage(Declined)}
   
   Please react to this post with ${RSVP_ACCEPT} to **Accept**, ${RSVP_MAYBE} for **Maybe**, and ${RSVP_DECLINE} to **Decline**.`;
 };
-
-// TODO
-
-// REMOVE BOT FROM LIST (DON'T ALLOW IN FIRST PLACE)
-// ONLY ALLOW 1 CHOICE PER ID
-// ALLOW USER TO UNCHOOSE THEIR CHOICE
-// MAYBE SOME SORT OF DB.

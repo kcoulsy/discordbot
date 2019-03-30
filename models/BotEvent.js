@@ -2,6 +2,7 @@ class BotEvent {
     constructor(data) {
       this.id = data.id;
       this.store = {};
+      this.event = data.event
     }
   
     getStore() {

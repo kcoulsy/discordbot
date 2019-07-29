@@ -6,19 +6,6 @@ const { BotEvent } = require('./models/BotEvent')
 
 const bot = new Discord.Client()
 
-const classRoles = [
-    'Warrior',
-    'Paladin',
-    'Hunter',
-    'Druid',
-    'Rogue',
-    'Priest',
-    'Mage',
-    'Warlock',
-]
-
-const specRoles = ['Tank', 'Healer', 'Damage']
-
 const raidMap = require('./constants/raidMap')
 const CONSTS = require('./constants/main');
 
@@ -26,15 +13,18 @@ let classRoleMap = {}
 let specRoleMap = {}
 let botEventStore = []
 
+console.log(CONSTS.ROLES_CLASS);
+
 bot.on('ready', () => {
     const guild = bot.guilds.find('name', 'Prototype')
 
-    classRoles.forEach(roleName => {
+    // settting initial store values
+    CONSTS.ROLES_CLASS.forEach(roleName => {
         let role = guild.roles.find('name', roleName)
         if (role) classRoleMap[role.id] = roleName
     })
 
-    specRoles.forEach(roleName => {
+    CONSTS.ROLES_SPEC.forEach(roleName => {
         let role = guild.roles.find('name', roleName)
         if (role) specRoleMap[role.id] = roleName
     })

@@ -1,233 +1,188 @@
-const Discord = require("discord.js");
+const Discord = require('discord.js')
 
-const botconfig = require("./botconfig.json");
+const botconfig = require('./botconfig.json')
 
-const { BotEvent } = require("./models/BotEvent");
+const { BotEvent } = require('./models/BotEvent')
 
-const bot = new Discord.Client();
+const bot = new Discord.Client()
 
-const RSVP_ACCEPT = "✅";
-const RSVP_MAYBE = "❔";
-const RSVP_DECLINE = "❌";
+const RSVP_ACCEPT = '✅'
+const RSVP_MAYBE = '❔'
+const RSVP_DECLINE = '❌'
 
 const classRoles = [
-  "Warrior",
-  "Paladin",
-  "Hunter",
-  "Druid",
-  "Rogue",
-  "Priest",
-  "Mage",
-  "Warlock"
-];
+    'Warrior',
+    'Paladin',
+    'Hunter',
+    'Druid',
+    'Rogue',
+    'Priest',
+    'Mage',
+    'Warlock',
+]
 
-const specRoles = ["Tank", "Healer", "Damage"];
+const specRoles = ['Tank', 'Healer', 'Damage']
 
-const raidMap = {
-  ony: {
-    name: `Onyxia's Lair`,
-    color: 0x851651,
-    img:
-      "https://wow.zamimg.com/images/wow/icons/large/achievement_boss_onyxia.jpg"
-  },
-  mc: {
-    name: `Molten Core`,
-    color: 0xceb410,
-    img:
-      "https://wow.zamimg.com/images/wow/icons/large/achievement_boss_ragnaros.jpg"
-  },
-  bwl: {
-    name: `Blackwing Lair`,
-    color: 0xa5572f,
-    img:
-      "https://wow.zamimg.com/images/wow/icons/large/achievement_boss_nefarion.jpg"
-  },
-  zg: {
-    name: `Zul Gurub`,
-    color: 0x1ba23a,
-    img:
-      "https://wow.zamimg.com/images/wow/icons/large/achievement_boss_hakkar.jpg"
-  },
-  aq20: {
-    name: `AQ20`,
-    color: 0xdad26c,
-    img:
-      "https://wow.zamimg.com/images/wow/icons/large/achievement_boss_ossiriantheunscarred.jpg"
-  },
-  aq40: {
-    name: `AQ40`,
-    color: 0xda6c96,
-    img:
-      "https://wow.zamimg.com/images/wow/icons/large/achievement_boss_cthun.jpg"
-  },
-  naxx: {
-    name: `Naxxramas`,
-    color: 0x5f62ac,
-    img:
-      "https://wow.zamimg.com/images/wow/icons/large/achievement_dungeon_naxxramas_normal.jpg"
-  },
-  pvp: {
-    name: "PVP",
-    color: 0x3977c1,
-    img: "https://wow.zamimg.com/images/wow/icons/large/inv_bannerpvp_02.jpg"
-  },
-  other: {
-    name: "",
-    color: 0x31d8d3,
-    img:
-      "https://wow.zamimg.com/images/wow/icons/large/spell_nature_wispsplode.jpg"
-  }
-};
-let classRoleMap = {};
-let specRoleMap = {};
-let botEventStore = [];
+const raidMap = require('./constants/raidMap')
 
-bot.on("ready", () => {
-  const guild = bot.guilds.find("name", "Prototype");
+let classRoleMap = {}
+let specRoleMap = {}
+let botEventStore = []
 
-  classRoles.forEach(roleName => {
-    let role = guild.roles.find("name", roleName);
-    if (role) classRoleMap[role.id] = roleName;
-  });
+bot.on('ready', () => {
+    const guild = bot.guilds.find('name', 'Prototype')
 
-  specRoles.forEach(roleName => {
-    let role = guild.roles.find("name", roleName);
-    if (role) specRoleMap[role.id] = roleName;
-  });
+    classRoles.forEach(roleName => {
+        let role = guild.roles.find('name', roleName)
+        if (role) classRoleMap[role.id] = roleName
+    })
 
-  console.log(`Logged in as ${bot.user.tag}!`);
-  bot.channels
-    .find("name", "bot-commands")
-    .send("Bot restarted. Events may be lost.");
-  bot.user.setActivity("#help");
-});
+    specRoles.forEach(roleName => {
+        let role = guild.roles.find('name', roleName)
+        if (role) specRoleMap[role.id] = roleName
+    })
 
-bot.on("message", msg => {
-  let prefix = botconfig.prefix;
-  let msgArray = msg.content.split(" ");
-  let cmd = msgArray[0];
-  let raid = msgArray[1];
-  let args = msgArray.slice(2);
+    console.log(`Logged in as ${bot.user.tag}!`)
+    bot.channels
+        .find('name', 'bot-commands')
+        .send('Bot restarted. Events may be lost.')
+    bot.user.setActivity('#help')
+})
 
-  switch (cmd) {
-    case `${prefix}newevent`:
-      if (!raidMap[raid]) {
-        msg.channel.send(`The format is $newevent {eventtype} {text}
-Valid eventtypes : ${Object.keys(raidMap).join(" ")}
-        `);
-        return;
-      }
-      botEventStore.push(
-        new BotEvent({ id: botEventStore.length, event: raidMap[raid] })
-      );
-      let eventembed = new Discord.RichEmbed()
-        .setThumbnail(raidMap[raid].img)
-        .setColor(raidMap[raid].color)
-        .addField(
-          `Event #${botEventStore.length - 1} ${
-            raidMap[raid].name
-          } - ${args.join(" ")}`,
-          generateMessage({})
-        );
-      bot.channels
-        .find("name", "events")
-        .send(eventembed)
-        .then(sentMsg => {
-          Promise.all([
-            sentMsg.react(RSVP_ACCEPT),
-            sentMsg.react(RSVP_MAYBE),
-            sentMsg.react(RSVP_DECLINE)
-          ]);
-        });
-      break;
-    default:
-      break;
-  }
-});
+bot.on('message', msg => {
+    let prefix = botconfig.prefix
+    let msgArray = msg.content.split(' ')
+    let cmd = msgArray[0]
+    let raid = msgArray[1]
+    let args = msgArray.slice(2)
 
-bot.on("messageReactionAdd", (reaction, user) => {
-  if (reaction.message.channel.name !== "events") {
-    return;
-  }
-  let title = reaction.message.embeds[0].fields[0].name;
-  let id = title.match(/#(\d+)/)[1];
-  if (user.bot) {
-    return;
-  }
-  reaction.message.guild.fetchMember(user.id).then(user => {
-    let userObj = {
-      id: user.id,
-      user,
-      playerClass: null,
-      playerRole: null
-    };
-    user._roles.forEach(roleId => {
-      if (specRoleMap[roleId]) {
-        userObj.playerRole = specRoleMap[roleId];
-      }
-      if (classRoleMap[roleId]) {
-        userObj.playerClass = classRoleMap[roleId];
-      }
-    });
-    if (!userObj.playerRole || !userObj.playerClass) {
-      console.log(userObj);
-      user.sendMessage(
-        "You need to pick a class and role to sign up to an event. You can do this in the #role-assign channel of the discord"
-      );
-      return;
+    switch (cmd) {
+        case `${prefix}newevent`:
+            if (!raidMap[raid]) {
+                msg.channel.send(`The format is $newevent {eventtype} {text}
+Valid eventtypes : ${Object.keys(raidMap).join(' ')}
+        `)
+                return
+            }
+            botEventStore.push(
+                new BotEvent({ id: botEventStore.length, event: raidMap[raid] })
+            )
+            let eventembed = new Discord.RichEmbed()
+                .setThumbnail(raidMap[raid].img)
+                .setColor(raidMap[raid].color)
+                .addField(
+                    `Event #${botEventStore.length - 1} ${
+                        raidMap[raid].name
+                    } - ${args.join(' ')}`,
+                    generateMessage({})
+                )
+            bot.channels
+                .find('name', 'events')
+                .send(eventembed)
+                .then(sentMsg => {
+                    Promise.all([
+                        sentMsg.react(RSVP_ACCEPT),
+                        sentMsg.react(RSVP_MAYBE),
+                        sentMsg.react(RSVP_DECLINE),
+                    ])
+                })
+            break
+        default:
+            break
     }
-    switch (reaction._emoji.name) {
-      case RSVP_ACCEPT:
-        botEventStore[id].addPlayer(
-          userObj,
-          userObj.playerRole,
-          userObj.playerClass
-        );
-        break;
-      case RSVP_MAYBE:
-        botEventStore[id].addPlayer(userObj, "Maybe", userObj.playerClass);
-        break;
-      case RSVP_DECLINE:
-        botEventStore[id].addPlayer(userObj, "Declined", userObj.playerClass);
-        break;
-      default:
-        break;
+})
+
+bot.on('messageReactionAdd', (reaction, user) => {
+    if (reaction.message.channel.name !== 'events') {
+        return
     }
+    let title = reaction.message.embeds[0].fields[0].name
+    let id = title.match(/#(\d+)/)[1]
+    if (user.bot) {
+        return
+    }
+    reaction.message.guild.fetchMember(user.id).then(user => {
+        let userObj = {
+            id: user.id,
+            user,
+            playerClass: null,
+            playerRole: null,
+        }
+        user._roles.forEach(roleId => {
+            if (specRoleMap[roleId]) {
+                userObj.playerRole = specRoleMap[roleId]
+            }
+            if (classRoleMap[roleId]) {
+                userObj.playerClass = classRoleMap[roleId]
+            }
+        })
+        if (!userObj.playerRole || !userObj.playerClass) {
+            console.log(userObj)
+            user.sendMessage(
+                'You need to pick a class and role to sign up to an event. You can do this in the #role-assign channel of the discord'
+            )
+            return
+        }
+        switch (reaction._emoji.name) {
+            case RSVP_ACCEPT:
+                botEventStore[id].addPlayer(
+                    userObj,
+                    userObj.playerRole,
+                    userObj.playerClass
+                )
+                break
+            case RSVP_MAYBE:
+                botEventStore[id].addPlayer(
+                    userObj,
+                    'Maybe',
+                    userObj.playerClass
+                )
+                break
+            case RSVP_DECLINE:
+                botEventStore[id].addPlayer(
+                    userObj,
+                    'Declined',
+                    userObj.playerClass
+                )
+                break
+            default:
+                break
+        }
 
-    reaction.message.edit(
-      new Discord.RichEmbed()
-        .setThumbnail(botEventStore[id].event.img)
-        .setColor(botEventStore[id].event.color)
-        .addField(title, generateMessage(botEventStore[id].store))
-    );
-  });
-});
+        reaction.message.edit(
+            new Discord.RichEmbed()
+                .setThumbnail(botEventStore[id].event.img)
+                .setColor(botEventStore[id].event.color)
+                .addField(title, generateMessage(botEventStore[id].store))
+        )
+    })
+})
 
-bot.login(botconfig.token);
+bot.login(botconfig.token)
 
 const getClassIcon = className => {
-  return bot.emojis.find(emoji => emoji.name === className.toLowerCase());
-};
+    return bot.emojis.find(emoji => emoji.name === className.toLowerCase())
+}
 
 const generateRoleMessage = role => {
-  if (!role) {
-    return "";
-  }
-  return Object.values(role).map(playerClass => {
-    if (!playerClass.length) return null;
-    return (
-      getClassIcon(playerClass[0].playerClass) +
-      playerClass.map(player => {
-        return player.user;
-      })
-    );
-  });
-};
+    if (!role) {
+        return ''
+    }
+    return Object.values(role).map(playerClass => {
+        if (!playerClass.length) return null
+        return (
+            getClassIcon(playerClass[0].playerClass) +
+            playerClass.map(player => {
+                return player.user
+            })
+        )
+    })
+}
 
 const generateMessage = accepted => {
-  const { Tank, Healer, Damage, Maybe, Declined } = accepted;
+    const { Tank, Healer, Damage, Maybe, Declined } = accepted
 
-  return `
+    return `
     __Players Going:__
 
     **Tank**
@@ -242,5 +197,5 @@ const generateMessage = accepted => {
   __Declined__
 ${generateRoleMessage(Declined)}
   
-  Please react to this post with ${RSVP_ACCEPT} to **Accept**, ${RSVP_MAYBE} for **Maybe**, and ${RSVP_DECLINE} to **Decline**.`;
-};
+  Please react to this post with ${RSVP_ACCEPT} to **Accept**, ${RSVP_MAYBE} for **Maybe**, and ${RSVP_DECLINE} to **Decline**.`
+}

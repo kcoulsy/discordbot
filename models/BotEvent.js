@@ -37,18 +37,18 @@ class BotEvent {
       return Array.isArray(this.store[roleName][className]);
     }
   
-    addPlayer(playerObj, roleName, className) {
+    addPlayer(playerObj, roleName) {
       if (!this.hasRole(roleName)) {
         this.addRole(roleName);
       }
-      if (!this.hasClass(roleName, className)) {
-        this.addClass(roleName, className);
+      if (!this.hasClass(roleName, playerObj.className)) {
+        this.addClass(roleName, playerObj.className);
       }
       const player = this.findPlayerById(playerObj.id);
       if (player) {
         this.removePlayer(player.player, player.roleName, player.className);
       }
-      this.store[roleName][className].push(playerObj);
+      this.store[roleName][playerObj.className].push(playerObj);
     }
   
     findPlayerById(playerId) {

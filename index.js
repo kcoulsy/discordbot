@@ -13,12 +13,18 @@ let classRoleMap = {}
 let specRoleMap = {}
 let botEventStore = []
 
-console.log(CONSTS.ROLES_CLASS);
+const createStore = require('./store/store');
+
+const store = createStore();
+
+const unsub = store.subscribe( function() {
+  console.log(store.getState());
+})
 
 bot.on('ready', () => {
     const guild = bot.guilds.find('name', 'Prototype')
 
-    // settting initial store values
+    // settting initial discord rank ids => name map
     CONSTS.ROLES_CLASS.forEach(roleName => {
         let role = guild.roles.find('name', roleName)
         if (role) classRoleMap[role.id] = roleName
@@ -33,7 +39,7 @@ bot.on('ready', () => {
     bot.channels
         .find('name', 'bot-commands')
         .send('Bot restarted. Events may be lost.')
-    bot.user.setActivity('#help')
+    bot.user.setActivity('$')
 })
 
 bot.on('message', msg => {
@@ -51,9 +57,14 @@ Valid eventtypes : ${Object.keys(raidMap).join(' ')}
         `)
                 return
             }
-            botEventStore.push(
-                new BotEvent({ id: botEventStore.length, event: raidMap[raid] })
-            )
+            const e = new BotEvent({ id: botEventStore.length, event: raidMap[raid] });
+            botEventStore.push(e);
+
+            store.dispatch({
+              type: 'add_event',
+              event: e
+            });
+
             let eventembed = new Discord.RichEmbed()
                 .setThumbnail(raidMap[raid].img)
                 .setColor(raidMap[raid].color)
@@ -104,44 +115,53 @@ bot.on('messageReactionAdd', (reaction, user) => {
             }
         })
         if (!userObj.playerRole || !userObj.playerClass) {
-            console.log(userObj)
             user.sendMessage(
                 'You need to pick a class and role to sign up to an event. You can do this in the #role-assign channel of the discord'
             )
             return
         }
+
         switch (reaction._emoji.name) {
             case CONSTS.EMOJI_ACCEPT:
-                botEventStore[id].addPlayer(
-                    userObj,
-                    userObj.playerRole,
-                    userObj.playerClass
-                )
+                store.dispatch({
+                  type: 'add_player_to_event',
+                  eventId: id,
+                  player: userObj,
+                  role: userObj.playerRole
+                });
                 break
             case CONSTS.EMOJI_MAYBE:
-                botEventStore[id].addPlayer(
-                    userObj,
-                    'Maybe',
-                    userObj.playerClass
-                )
+                store.dispatch({
+                  type: 'add_player_to_event',
+                  eventId: id,
+                  player: userObj,
+                  role: 'Maybe'
+                });
                 break
             case CONSTS.EMOJI_DECLINE:
-                botEventStore[id].addPlayer(
-                    userObj,
-                    'Declined',
-                    userObj.playerClass
-                )
+                store.dispatch({
+                  type: 'add_player_to_event',
+                  eventId: id,
+                  player: userObj,
+                  role: 'Declined'
+                });
                 break
             default:
                 break
         }
 
-        reaction.message.edit(
-            new Discord.RichEmbed()
-                .setThumbnail(botEventStore[id].event.img)
-                .setColor(botEventStore[id].event.color)
-                .addField(title, generateMessage(botEventStore[id].store))
-        )
+          const state = store.getState();
+          const storedEvent = state.find(function(ev) {
+            return ev.id == id;
+          });
+  
+          reaction.message.edit(
+              new Discord.RichEmbed()
+                  .setThumbnail(storedEvent.event.img)
+                  .setColor(storedEvent.event.color)
+                  .addField(title, generateMessage(storedEvent.store))
+          );
+
     })
 })
 

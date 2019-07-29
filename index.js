@@ -21,6 +21,8 @@ const unsub = store.subscribe( function() {
   console.log(store.getState());
 })
 
+const generateMessage = require('./utils/generateMessage');
+
 bot.on('ready', () => {
     const guild = bot.guilds.find('name', 'Prototype')
 
@@ -72,7 +74,7 @@ Valid eventtypes : ${Object.keys(raidMap).join(' ')}
                     `Event #${botEventStore.length - 1} ${
                         raidMap[raid].name
                     } - ${args.join(' ')}`,
-                    generateMessage({})
+                    generateMessage(bot, {})
                 )
             bot.channels
                 .find('name', 'events')
@@ -159,7 +161,7 @@ bot.on('messageReactionAdd', (reaction, user) => {
               new Discord.RichEmbed()
                   .setThumbnail(storedEvent.event.img)
                   .setColor(storedEvent.event.color)
-                  .addField(title, generateMessage(storedEvent.store))
+                  .addField(title, generateMessage(bot, storedEvent.store))
           );
 
     })
@@ -167,42 +169,4 @@ bot.on('messageReactionAdd', (reaction, user) => {
 
 bot.login(botconfig.token)
 
-const getClassIcon = className => {
-    return bot.emojis.find(emoji => emoji.name === className.toLowerCase())
-}
 
-const generateRoleMessage = role => {
-    if (!role) {
-        return ''
-    }
-    return Object.values(role).map(playerClass => {
-        if (!playerClass.length) return null
-        return (
-            getClassIcon(playerClass[0].playerClass) +
-            playerClass.map(player => {
-                return player.user
-            })
-        )
-    })
-}
-
-const generateMessage = accepted => {
-    const { Tank, Healer, Damage, Maybe, Declined } = accepted
-
-    return `
-    __Players Going:__
-
-    **Tank**
-  ${generateRoleMessage(Tank)}
-    **Healer**
-  ${generateRoleMessage(Healer)}
-    **Damage**
-  ${generateRoleMessage(Damage)}
-
-  __Maybe__
-  ${generateRoleMessage(Maybe)}
-  __Declined__
-${generateRoleMessage(Declined)}
-  
-  Please react to this post with ${CONSTS.EMOJI_ACCEPT} to **Accept**, ${CONSTS.EMOJI_MAYBE} for **Maybe**, and ${CONSTS.EMOJI_DECLINE} to **Decline**.`
-}

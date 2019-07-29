@@ -6,10 +6,6 @@ const { BotEvent } = require('./models/BotEvent')
 
 const bot = new Discord.Client()
 
-const RSVP_ACCEPT = '✅'
-const RSVP_MAYBE = '❔'
-const RSVP_DECLINE = '❌'
-
 const classRoles = [
     'Warrior',
     'Paladin',
@@ -24,6 +20,7 @@ const classRoles = [
 const specRoles = ['Tank', 'Healer', 'Damage']
 
 const raidMap = require('./constants/raidMap')
+const CONSTS = require('./constants/main');
 
 let classRoleMap = {}
 let specRoleMap = {}
@@ -81,9 +78,9 @@ Valid eventtypes : ${Object.keys(raidMap).join(' ')}
                 .send(eventembed)
                 .then(sentMsg => {
                     Promise.all([
-                        sentMsg.react(RSVP_ACCEPT),
-                        sentMsg.react(RSVP_MAYBE),
-                        sentMsg.react(RSVP_DECLINE),
+                        sentMsg.react(CONSTS.EMOJI_ACCEPT),
+                        sentMsg.react(CONSTS.EMOJI_MAYBE),
+                        sentMsg.react(CONSTS.EMOJI_DECLINE),
                     ])
                 })
             break
@@ -124,21 +121,21 @@ bot.on('messageReactionAdd', (reaction, user) => {
             return
         }
         switch (reaction._emoji.name) {
-            case RSVP_ACCEPT:
+            case CONSTS.EMOJI_ACCEPT:
                 botEventStore[id].addPlayer(
                     userObj,
                     userObj.playerRole,
                     userObj.playerClass
                 )
                 break
-            case RSVP_MAYBE:
+            case CONSTS.EMOJI_MAYBE:
                 botEventStore[id].addPlayer(
                     userObj,
                     'Maybe',
                     userObj.playerClass
                 )
                 break
-            case RSVP_DECLINE:
+            case CONSTS.EMOJI_DECLINE:
                 botEventStore[id].addPlayer(
                     userObj,
                     'Declined',
@@ -197,5 +194,5 @@ const generateMessage = accepted => {
   __Declined__
 ${generateRoleMessage(Declined)}
   
-  Please react to this post with ${RSVP_ACCEPT} to **Accept**, ${RSVP_MAYBE} for **Maybe**, and ${RSVP_DECLINE} to **Decline**.`
+  Please react to this post with ${CONSTS.EMOJI_ACCEPT} to **Accept**, ${CONSTS.EMOJI_MAYBE} for **Maybe**, and ${CONSTS.EMOJI_DECLINE} to **Decline**.`
 }

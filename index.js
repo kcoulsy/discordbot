@@ -56,81 +56,79 @@ bot.on('message', msg => {
     }
 });
 
+// Since the bot may restart, messages may not be cached. So we are listening for the raw events of all reactions
+// Only in the correct channel.
+bot.on('raw', packet => {
+    // We don't want this to run on unrelated packets
+    if (!['MESSAGE_REACTION_ADD'].includes(packet.t)) return;
+    // Grab the channel to check the message from
+    const channel = bot.channels.get(packet.d.channel_id);
+
+    // Check we are in the correct channel
+    if (channel.name !== CONSTS.CHANNEL_NAME) return;
+
+    // There's no need to emit if the message is cached, because the event will fire anyway for that
+    if (channel.messages.has(packet.d.message_id)) return;
+    // Since we have confirmed the message is not cached, let's fetch it
+    channel.fetchMessage(packet.d.message_id).then(message => {
+        // Emojis can have identifiers of name:id format, so we have to account for that case as well
+        const emoji = packet.d.emoji.id
+            ? `${packet.d.emoji.name}:${packet.d.emoji.id}`
+            : packet.d.emoji.name;
+        // This gives us the reaction we need to emit the event properly, in top of the message object
+        const reaction = message.reactions.get(emoji);
+        // Adds the currently reacting user to the reaction's users collection.
+        if (reaction)
+            reaction.users.set(
+                packet.d.user_id,
+                bot.users.get(packet.d.user_id)
+            );
+        // Check which type of event it is before emitting
+        if (packet.t === 'MESSAGE_REACTION_ADD') {
+            bot.emit(
+                'messageReactionAdd',
+                reaction,
+                bot.users.get(packet.d.user_id)
+            );
+        }
+    });
+});
+
 bot.on('messageReactionAdd', (reaction, user) => {
-    return;
-    if (reaction.message.channel.name !== 'events') {
+    // Only check correct channel
+    if (reaction.message.channel.name !== CONSTS.CHANNEL_NAME) {
         return;
     }
-    let title = reaction.message.embeds[0].fields[0].name;
-    let id = title.match(/#(\d+)/)[1];
+
+    // const title = reaction.message.embeds[0].fields[0].name;
+    const messageId = reaction.message.id;
+
+    // Early return if bot, since it sets up the reactions on it's own post.
     if (user.bot) {
         return;
     }
-    reaction.message.guild.fetchMember(user.id).then(user => {
-        let userObj = {
-            id: user.id,
-            user,
-            playerClass: null,
-            playerRole: null,
-        };
-        user._roles.forEach(roleId => {
-            if (specRoleMap[roleId]) {
-                userObj.playerRole = specRoleMap[roleId];
-            }
-            if (classRoleMap[roleId]) {
-                userObj.playerClass = classRoleMap[roleId];
-            }
-        });
-        if (!userObj.playerRole || !userObj.playerClass) {
-            user.sendMessage(
-                'You need to pick a class and role to sign up to an event. You can do this in the #role-assign channel of the discord'
-            );
-            return;
-        }
 
-        switch (reaction._emoji.name) {
-            case CONSTS.EMOJI_ACCEPT:
-                store.dispatch({
-                    type: 'add_player_to_event',
-                    eventId: id,
-                    player: userObj,
-                    playerId: user.id,
-                    role: userObj.playerRole,
-                });
-                break;
-            case CONSTS.EMOJI_MAYBE:
-                store.dispatch({
-                    type: 'add_player_to_event',
-                    eventId: id,
-                    player: userObj,
-                    playerId: user.id,
-                    role: 'Maybe',
-                });
-                break;
-            case CONSTS.EMOJI_DECLINE:
-                store.dispatch({
-                    type: 'add_player_to_event',
-                    eventId: id,
-                    player: userObj,
-                    playerId: user.id,
-                    role: 'Declined',
-                });
-                break;
-            default:
-                break;
-        }
+    let status;
 
-        const state = store.getState();
-        const storedEvent = state.find(function(ev) {
-            return ev.id == id;
-        });
+    switch (reaction._emoji.name) {
+        case CONSTS.EMOJI_ACCEPT:
+            status = 'Accepted';
+            break;
+        case CONSTS.EMOJI_MAYBE:
+            status = 'Maybe';
+            break;
+        case CONSTS.EMOJI_DECLINE:
+            status = 'Declined';
+            break;
+        default:
+            break;
+    }
 
-        //   reaction.message.edit(
-        //       new Discord.RichEmbed()
-        //           .setThumbnail(storedEvent.event.img)
-        //           .setColor(storedEvent.event.color)
-        //           .addField(title, generateMessage(bot, storedEvent.store))
-        //   );
+    store.dispatch({
+        type: 'add_player_to_event',
+        eventId: messageId,
+        playerId: user.id,
+        status
     });
 });
 

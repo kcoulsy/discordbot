@@ -52,4 +52,5 @@ module.exports = {
     SPEC_HEALER,
     SPEC_DAMAGE,
     ROLES_SPEC,
+    CHANNEL_NAME: 'events'
 }

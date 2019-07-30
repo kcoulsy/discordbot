@@ -11,7 +11,7 @@ module.exports = (bot, msg, store) => {
 
     if (!raidMap[raid]) {
         return msg.channel.send(
-            `The format is \`$newevent {eventtype} {text}\` Valid eventtypes : ${Object.keys(
+            `The format is \`$new {eventType} {text}\` Valid eventTypes : ${Object.keys(
                 raidMap
             ).join(' ')}`
         );
@@ -33,11 +33,11 @@ module.exports = (bot, msg, store) => {
                 sentMsg.react(CONSTS.EMOJI_MAYBE),
                 sentMsg.react(CONSTS.EMOJI_DECLINE),
             ]);
-            console.log(sentMsg.id);
+
             store.dispatch({
-                id: sentMsg.id,
                 type: 'add_event',
                 event: {
+                    id: sentMsg.id,
                     name: eventTitle,
                     event: raidMap[raid],
                     attending: [],

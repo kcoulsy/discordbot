@@ -13,6 +13,7 @@ const generateRoleMessage = (bot, role) => {
         return (
             getClassIcon(bot, playerClass[0].playerClass) +
             playerClass.map(player => {
+              console.log(player.user);
                 return player.user
             })
         )

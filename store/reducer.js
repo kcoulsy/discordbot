@@ -1,22 +1,38 @@
 const initialState = [];
 
 module.exports = function reducer(state = initialState, action) {
-    console.log(action);
-    switch(action.type) {
+    // console.log(action);
+    switch (action.type) {
         case 'add_event':
             return [...state, action.event];
         case 'add_player_to_event':
-            return state.map((ev) => {
+            const {
+                status,
+                eventId,
+                playerRole,
+                playerClass,
+                playerId,
+            } = action;
+            return state.map(ev => {
                 // only == because string == int
-                if (ev.id == action.eventId) {
-                    if (!ev.attending[action.status]) {
-                        ev.attending[action.status] = [];
+                if (ev.id == eventId) {
+                    if (!ev.attending[status]) {
+                        ev.attending[status] = {};
                     }
-                    ev.attending[action.status].push(action.playerId);
+                    if (!ev.attending[status][playerRole]) {
+                        ev.attending[status][playerRole] = {};
+                    }
+                    if (!ev.attending[status][playerRole][playerClass]) {
+                        ev.attending[status][playerRole][playerClass] = [];
+                    }
+
+                    ev.attending[status][playerRole][playerClass].push(
+                        playerId
+                    );
                 }
                 return ev;
             });
         default:
             return state;
     }
-}
+};

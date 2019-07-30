@@ -13,13 +13,14 @@ let specRoleMap = {};
 const createStore = require('./store/store');
 
 const store = createStore();
-
-const unsub = store.subscribe(function() {
-    console.log(store.getState());
-    //   fs.writeFileSync('store.js', store.getState());
-});
-
 const createEvent = require('./commands/createEvent');
+const generateMessage = require('./utils/generateMessage');
+
+// const unsub = store.subscribe(function() {
+//     const events = store.getState();
+//     // console.log(events);
+//     //   fs.writeFileSync('store.json', JSON.stringify(store.getState()));
+// });
 
 bot.on('ready', () => {
     const guild = bot.guilds.find('name', 'Prototype');
@@ -36,9 +37,9 @@ bot.on('ready', () => {
     });
 
     console.log(`Logged in as ${bot.user.tag}!`);
-    bot.channels
-        .find('name', 'bot-commands')
-        .send('Bot restarted. Events may be lost.');
+    // bot.channels
+    //     .find('name', 'bot-commands')
+    //     .send('Bot restarted. Events may be lost.');
     bot.user.setActivity('$');
 });
 
@@ -108,28 +109,57 @@ bot.on('messageReactionAdd', (reaction, user) => {
         return;
     }
 
-    let status;
+    bot.guilds
+        .find('name', 'Prototype')
+        .fetchMember(user.id)
+        .then(user => {
+            let status;
+            let playerRole;
+            let playerClass;
 
-    switch (reaction._emoji.name) {
-        case CONSTS.EMOJI_ACCEPT:
-            status = 'Accepted';
-            break;
-        case CONSTS.EMOJI_MAYBE:
-            status = 'Maybe';
-            break;
-        case CONSTS.EMOJI_DECLINE:
-            status = 'Declined';
-            break;
-        default:
-            break;
-    }
-
-    store.dispatch({
-        type: 'add_player_to_event',
-        eventId: messageId,
-        playerId: user.id,
-        status
-    });
+            switch (reaction._emoji.name) {
+                case CONSTS.EMOJI_ACCEPT:
+                    status = 'Accepted';
+                    break;
+                case CONSTS.EMOJI_MAYBE:
+                    status = 'Maybe';
+                    break;
+                case CONSTS.EMOJI_DECLINE:
+                    status = 'Declined';
+                    break;
+                default:
+                    break;
+            }
+            user._roles.forEach(roleId => {
+                if (specRoleMap[roleId]) {
+                    playerRole = specRoleMap[roleId];
+                }
+                if (classRoleMap[roleId]) {
+                    playerClass = classRoleMap[roleId];
+                }
+            });
+            if (!playerRole || !playerClass) {
+                user.sendMessage(
+                    'You need to pick a class and role to sign up to an event. You can do this in the #read-first channel of the discord'
+                );
+                return;
+            }
+            store.dispatch({
+                type: 'add_player_to_event',
+                eventId: messageId,
+                playerId: user.id,
+                status,
+                playerRole,
+                playerClass,
+            });
+            const ev = store.getState().find(event => event.id === messageId);
+            reaction.message.edit(
+                new Discord.RichEmbed()
+                    .setThumbnail(ev.event.img)
+                    .setColor(ev.event.color)
+                    .addField(ev.name, generateMessage(bot, ev))
+            );
+        });
 });
 
 bot.login(botconfig.token);

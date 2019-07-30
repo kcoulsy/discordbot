@@ -40,7 +40,7 @@ module.exports = (bot, msg, store) => {
                     id: sentMsg.id,
                     name: eventTitle,
                     event: raidMap[raid],
-                    attending: [],
+                    attending: {},
                 },
             });
         });

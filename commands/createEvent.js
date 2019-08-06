@@ -1,5 +1,6 @@
 const Discord = require('discord.js');
 
+const { ADD_EVENT } = require('./../constants/redux.js');
 const CONSTS = require('../constants/main');
 const raidMap = require('../constants/raidMap');
 const generateMessage = require('../utils/generateMessage');
@@ -35,7 +36,7 @@ module.exports = (bot, msg, store) => {
             ]);
 
             store.dispatch({
-                type: 'add_event',
+                type: ADD_EVENT,
                 event: {
                     id: sentMsg.id,
                     name: eventTitle,

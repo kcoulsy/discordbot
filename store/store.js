@@ -1,6 +1,7 @@
-const { createStore } = require('redux');
+const { createStore, applyMiddleware } = require('redux');
 const reducer = require('./reducer');
+const middleware = require('./middleware');
 
 module.exports = () => {
-    return createStore(reducer);
+    return createStore(reducer, applyMiddleware(middleware));
 }

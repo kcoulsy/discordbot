@@ -16,6 +16,7 @@ const store = createStore();
 const createEvent = require('./commands/createEvent');
 const generateMessage = require('./utils/generateMessage');
 
+const { ADD_PLAYER_TO_EVENT, LOAD_INITIAL_STATE } = require('./constants/redux');
 // const unsub = store.subscribe(function() {
 //     const events = store.getState();
 //     // console.log(events);
@@ -34,6 +35,13 @@ bot.on('ready', () => {
     CONSTS.ROLES_SPEC.forEach(roleName => {
         let role = guild.roles.find('name', roleName);
         if (role) specRoleMap[role.id] = roleName;
+    });
+
+    const initialState = fs.readFileSync('store.json');
+
+    store.dispatch({
+        type: LOAD_INITIAL_STATE,
+        initialState: JSON.parse(initialState)
     });
 
     console.log(`Logged in as ${bot.user.tag}!`);
@@ -145,7 +153,7 @@ bot.on('messageReactionAdd', (reaction, user) => {
                 return;
             }
             store.dispatch({
-                type: 'add_player_to_event',
+                type: ADD_PLAYER_TO_EVENT,
                 eventId: messageId,
                 playerId: user.id,
                 status,

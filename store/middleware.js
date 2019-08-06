@@ -7,7 +7,7 @@ const {
 
 module.exports = store => next => action => {
     const state = store.getState();
-    console.log(state);
+
     if (action.type === ADD_PLAYER_TO_EVENT) {
         state.forEach(event => {
             if (event.attending) {
@@ -17,7 +17,6 @@ module.exports = store => next => action => {
                             ([playerRole, playerClasses]) => {
                                 Object.entries(playerClasses).forEach(
                                     ([playerClass, players]) => {
-                                        // console.log(players);
                                         if (players.includes(action.playerId)) {
                                             store.dispatch({
                                                 type: REMOVE_PLAYER_FROM_EVENT,
@@ -40,7 +39,6 @@ module.exports = store => next => action => {
     next(action);
 
     if (action.type !== LOAD_INITIAL_STATE) {
-        console.log(state);
         console.log('Writing to store.json');
         fs.writeFileSync('store.json', JSON.stringify(state));
     }

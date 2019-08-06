@@ -9,7 +9,7 @@ const initialState = [];
 
 module.exports = function reducer(state = initialState, action) {
     const { status, eventId, playerRole, playerClass, playerId } = action;
-    console.log(action);
+
     switch (action.type) {
         case LOAD_INITIAL_STATE:
             return action.initialState;
@@ -44,7 +44,6 @@ module.exports = function reducer(state = initialState, action) {
                         !ev.attending[status][playerRole] ||
                         !ev.attending[status][playerRole][playerClass]
                     ) {
-                        console.log('here');
                         return ev;
                     }
                     ev.attending[status][playerRole][

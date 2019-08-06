@@ -16,12 +16,12 @@ const store = createStore();
 const createEvent = require('./commands/createEvent');
 const generateMessage = require('./utils/generateMessage');
 
-const { ADD_PLAYER_TO_EVENT, LOAD_INITIAL_STATE } = require('./constants/redux');
-// const unsub = store.subscribe(function() {
-//     const events = store.getState();
-//     // console.log(events);
-//     //   fs.writeFileSync('store.json', JSON.stringify(store.getState()));
-// });
+const {
+    ADD_PLAYER_TO_EVENT,
+    REMOVE_PLAYER_FROM_EVENT,
+    LOAD_INITIAL_STATE,
+} = require('./constants/redux');
+
 
 bot.on('ready', () => {
     const guild = bot.guilds.find('name', 'Prototype');
@@ -41,7 +41,7 @@ bot.on('ready', () => {
 
     store.dispatch({
         type: LOAD_INITIAL_STATE,
-        initialState: JSON.parse(initialState)
+        initialState: JSON.parse(initialState),
     });
 
     console.log(`Logged in as ${bot.user.tag}!`);
@@ -69,7 +69,8 @@ bot.on('message', msg => {
 // Only in the correct channel.
 bot.on('raw', packet => {
     // We don't want this to run on unrelated packets
-    if (!['MESSAGE_REACTION_ADD'].includes(packet.t)) return;
+    if (!['MESSAGE_REACTION_ADD', 'MESSAGE_REACTION_REMOVE'].includes(packet.t))
+        return;
     // Grab the channel to check the message from
     const channel = bot.channels.get(packet.d.channel_id);
 
@@ -100,10 +101,25 @@ bot.on('raw', packet => {
                 bot.users.get(packet.d.user_id)
             );
         }
+        if (packet.t === 'MESSAGE_REACTION_REMOVE') {
+            bot.emit(
+                'messageReactionRemove',
+                reaction,
+                client.users.get(packet.d.user_id)
+            );
+        }
     });
 });
 
 bot.on('messageReactionAdd', (reaction, user) => {
+    messageReaction(reaction, user, ADD_PLAYER_TO_EVENT);
+});
+
+bot.on('messageReactionRemove', (reaction, user) => {
+    messageReaction(reaction, user, REMOVE_PLAYER_FROM_EVENT);
+});
+
+const messageReaction = (reaction, user, type) => {
     // Only check correct channel
     if (reaction.message.channel.name !== CONSTS.CHANNEL_NAME) {
         return;
@@ -153,7 +169,7 @@ bot.on('messageReactionAdd', (reaction, user) => {
                 return;
             }
             store.dispatch({
-                type: ADD_PLAYER_TO_EVENT,
+                type,
                 eventId: messageId,
                 playerId: user.id,
                 status,
@@ -168,6 +184,6 @@ bot.on('messageReactionAdd', (reaction, user) => {
                     .addField(ev.name, generateMessage(bot, ev))
             );
         });
-});
+};
 
 bot.login(botconfig.token);

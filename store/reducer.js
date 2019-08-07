@@ -1,5 +1,6 @@
 const {
     ADD_EVENT,
+    REMOVE_EVENT,
     ADD_PLAYER_TO_EVENT,
     REMOVE_PLAYER_FROM_EVENT,
     LOAD_INITIAL_STATE,
@@ -9,12 +10,14 @@ const initialState = [];
 
 module.exports = function reducer(state = initialState, action) {
     const { status, eventId, playerRole, playerClass, playerId } = action;
-
+    console.log('############ ACTION', action);
     switch (action.type) {
         case LOAD_INITIAL_STATE:
             return action.initialState;
         case ADD_EVENT:
             return [...state, action.event];
+        case REMOVE_EVENT:
+            return state.filter(event => event.id !== eventId);
         case ADD_PLAYER_TO_EVENT:
             return state.map(ev => {
                 // only == because string == int

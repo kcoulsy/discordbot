@@ -17,11 +17,15 @@ const createEvent = require('./commands/createEvent');
 const generateMessage = require('./utils/generateMessage');
 
 const {
+    REMOVE_EVENT,
     ADD_PLAYER_TO_EVENT,
     REMOVE_PLAYER_FROM_EVENT,
     LOAD_INITIAL_STATE,
 } = require('./constants/redux');
 
+// const unsub = store.subscribe(() => {
+//     // console.log(store.getState());
+// });
 
 bot.on('ready', () => {
     const guild = bot.guilds.find('name', 'Prototype');
@@ -59,7 +63,6 @@ bot.on('message', msg => {
     switch (cmd) {
         case `${prefix}new`:
             return createEvent(bot, msg, store);
-
         default:
             break;
     }
@@ -105,18 +108,10 @@ bot.on('raw', packet => {
             bot.emit(
                 'messageReactionRemove',
                 reaction,
-                client.users.get(packet.d.user_id)
+                bot.users.get(packet.d.user_id)
             );
         }
     });
-});
-
-bot.on('messageReactionAdd', (reaction, user) => {
-    messageReaction(reaction, user, ADD_PLAYER_TO_EVENT);
-});
-
-bot.on('messageReactionRemove', (reaction, user) => {
-    messageReaction(reaction, user, REMOVE_PLAYER_FROM_EVENT);
 });
 
 const messageReaction = (reaction, user, type) => {
@@ -125,7 +120,6 @@ const messageReaction = (reaction, user, type) => {
         return;
     }
 
-    // const title = reaction.message.embeds[0].fields[0].name;
     const messageId = reaction.message.id;
 
     // Early return if bot, since it sets up the reactions on it's own post.
@@ -142,6 +136,33 @@ const messageReaction = (reaction, user, type) => {
             let playerClass;
 
             switch (reaction._emoji.name) {
+                case CONSTS.EMOJI_CLOSE:
+                    if (
+                        [CONSTS.ROLE_OFFICER, CONSTS.ROLE_GM].includes(
+                            user.highestRole.name
+                        )
+                    ) {
+                        // reaction.message.channel.sendMessage('Closing that one');
+                        const ev = store
+                            .getState()
+                            .find(event => event.id === messageId);
+                        if (!ev) return;
+                        reaction.message.edit(
+                            new Discord.RichEmbed()
+                                .setThumbnail(ev.event.img)
+                                .setColor(ev.event.color)
+                                .addField(
+                                    `#Event - ${ev.event.name} | ${ev.name}`,
+                                    generateMessage(bot, ev, true)
+                                )
+                        );
+                        store.dispatch({
+                            type: REMOVE_EVENT,
+                            eventId: messageId,
+                        });
+                        return;
+                    }
+                    return;
                 case CONSTS.EMOJI_ACCEPT:
                     status = 'Accepted';
                     break;
@@ -177,13 +198,27 @@ const messageReaction = (reaction, user, type) => {
                 playerClass,
             });
             const ev = store.getState().find(event => event.id === messageId);
+            if (!ev) {
+                return;
+            }
             reaction.message.edit(
                 new Discord.RichEmbed()
                     .setThumbnail(ev.event.img)
                     .setColor(ev.event.color)
-                    .addField(ev.name, generateMessage(bot, ev))
+                    .addField(
+                        `#Event - ${ev.event.name} | ${ev.name}`,
+                        generateMessage(bot, ev, false)
+                    )
             );
         });
 };
+
+bot.on('messageReactionAdd', (reaction, user) => {
+    messageReaction(reaction, user, ADD_PLAYER_TO_EVENT);
+});
+
+bot.on('messageReactionRemove', (reaction, user) => {
+    messageReaction(reaction, user, REMOVE_PLAYER_FROM_EVENT);
+});
 
 bot.login(botconfig.token);

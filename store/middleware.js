@@ -10,6 +10,8 @@ module.exports = store => next => action => {
 
     if (action.type === ADD_PLAYER_TO_EVENT) {
         state.forEach(event => {
+            if (event.id != action.eventId) return;
+
             if (event.attending) {
                 Object.entries(event.attending).forEach(
                     ([status, playerRoles]) => {
@@ -40,6 +42,7 @@ module.exports = store => next => action => {
 
     if (action.type !== LOAD_INITIAL_STATE) {
         console.log('Writing to store.json');
-        fs.writeFileSync('store.json', JSON.stringify(state));
+        console.log('############# WRITING ', store.getState());
+        fs.writeFileSync('store.json', JSON.stringify(store.getState()));
     }
 };

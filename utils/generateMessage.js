@@ -4,10 +4,10 @@ const getClassIcon = (bot, className) => {
     return bot.emojis.find(emoji => emoji.name === className.toLowerCase());
 };
 
-const generateMessage = (bot, event) => {
+const generateMessage = (bot, event, close) => {
     const { attending } = event;
     let message = ``;
-
+    // console.log(event);
     if (attending) {
         Object.entries(attending).map(([status, role]) => {
             message += `**${status}:**\n`;
@@ -25,12 +25,15 @@ const generateMessage = (bot, event) => {
             message += `\n`;
         });
     }
-
-    message += `\nPlease react to this post with ${
-        CONSTS.EMOJI_ACCEPT
-    } to **Accept**, ${CONSTS.EMOJI_MAYBE} for **Maybe**, and ${
-        CONSTS.EMOJI_DECLINE
-    } to **Decline**.`;
+    if (!close) {
+        message += `\nPlease react to this post with ${
+            CONSTS.EMOJI_ACCEPT
+        } to **Accept**, ${CONSTS.EMOJI_MAYBE} for **Maybe**, and ${
+            CONSTS.EMOJI_DECLINE
+        } to **Decline**.`;
+    } else {
+        message += `This event has finished!`
+    }
 
     return message;
 };

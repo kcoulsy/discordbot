@@ -1,6 +1,7 @@
 const EMOJI_ACCEPT = '✅'
 const EMOJI_MAYBE = '❔'
 const EMOJI_DECLINE = '❌'
+const EMOJI_CLOSE = '🏆'
 
 const RSVP_ACCEPT = 'Accept'
 const RSVP_MAYBE = 'Maybe'
@@ -36,6 +37,7 @@ module.exports = {
     EMOJI_ACCEPT,
     EMOJI_MAYBE,
     EMOJI_DECLINE,
+    EMOJI_CLOSE,
     RSVP_ACCEPT,
     RSVP_MAYBE,
     RSVP_DECLINE,
@@ -52,5 +54,7 @@ module.exports = {
     SPEC_HEALER,
     SPEC_DAMAGE,
     ROLES_SPEC,
-    CHANNEL_NAME: 'events'
+    CHANNEL_NAME: 'events',
+    ROLE_OFFICER: 'Officer',
+    ROLE_GM: 'Guild Master'
 }

@@ -18,12 +18,18 @@ module.exports = (bot, msg, store) => {
         );
     }
 
+    if (store.getState().length >= 10) {
+        return msg.channel.send(
+            `You may only have 5 events at one time.`
+        );
+    }
+
     let eventembed = new Discord.RichEmbed()
         .setThumbnail(raidMap[raid].img)
         .setColor(raidMap[raid].color)
         .addField(
-            `#Event ${raidMap[raid].name} - ${eventTitle}`,
-            generateMessage(bot, {})
+            `#Event - ${raidMap[raid].name} | ${eventTitle}`,
+            generateMessage(bot, {}, false)
         );
     bot.channels
         .find('name', 'events')

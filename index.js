@@ -60,8 +60,14 @@ bot.on('message', msg => {
     let msgArray = msg.content.split(' ');
     let cmd = msgArray[0];
 
+    if (
+        ![CONSTS.ROLE_OFFICER, CONSTS.ROLE_GM].includes(msg.member.highestRole.name)
+    ) {
+        return;
+    }
+
     switch (cmd) {
-        case `${prefix}new`:
+        case `${prefix}event`:
             return createEvent(bot, msg, store);
         default:
             break;

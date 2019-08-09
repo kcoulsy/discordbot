@@ -5,12 +5,12 @@ const getClassIcon = (bot, className) => {
 };
 
 const generateMessage = (bot, event, close) => {
-    const { attending } = event;
-    let message = ``;
+    const { attending, description } = event;
+    let message = `${description}\n`;
     // console.log(event);
     if (attending) {
         Object.entries(attending).map(([status, role]) => {
-            message += `**${status}:**\n`;
+            message += `\n**${status}:**\n`;
             Object.entries(role).map(([playerRole, playerClasses]) => {
                 message += `${playerRole}\n`;
                 Object.entries(playerClasses).map(([playerClass, players]) => {

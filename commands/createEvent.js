@@ -8,7 +8,9 @@ const generateMessage = require('../utils/generateMessage');
 module.exports = (bot, msg, store) => {
     let msgArray = msg.content.split(' ');
     let raid = msgArray[1];
-    let eventTitle = msgArray.slice(2).join(' ');
+    let args = msgArray.slice(2).join(' ').split('|');
+    let eventTitle = args[0];
+    let eventDesc = args[1];
 
     if (!raidMap[raid]) {
         return msg.channel.send(
@@ -29,7 +31,9 @@ module.exports = (bot, msg, store) => {
         .setColor(raidMap[raid].color)
         .addField(
             `#Event - ${raidMap[raid].name} | ${eventTitle}`,
-            generateMessage(bot, {}, false)
+            generateMessage(bot, {
+                description: eventDesc
+            }, false)
         );
     bot.channels
         .find('name', 'events')
@@ -46,6 +50,7 @@ module.exports = (bot, msg, store) => {
                 event: {
                     id: sentMsg.id,
                     name: eventTitle,
+                    description: eventDesc,
                     event: raidMap[raid],
                     attending: {},
                 },

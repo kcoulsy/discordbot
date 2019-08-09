@@ -15,6 +15,7 @@ const createStore = require('./store/store');
 const store = createStore();
 const createEvent = require('./commands/createEvent');
 const generateMessage = require('./utils/generateMessage');
+const rawReactionEmitter = require('./utils/rawReactionEmitter');
 
 const {
     REMOVE_EVENT,
@@ -74,51 +75,10 @@ bot.on('message', msg => {
     }
 });
 
-// Since the bot may restart, messages may not be cached. So we are listening for the raw events of all reactions
+// Since the bot may restart, messages may not be cached.
+// So we are listening for the raw events of all reactions
 // Only in the correct channel.
-bot.on('raw', packet => {
-    // We don't want this to run on unrelated packets
-    if (!['MESSAGE_REACTION_ADD', 'MESSAGE_REACTION_REMOVE'].includes(packet.t))
-        return;
-    // Grab the channel to check the message from
-    const channel = bot.channels.get(packet.d.channel_id);
-
-    // Check we are in the correct channel
-    if (channel.name !== CONSTS.CHANNEL_NAME) return;
-
-    // There's no need to emit if the message is cached, because the event will fire anyway for that
-    if (channel.messages.has(packet.d.message_id)) return;
-    // Since we have confirmed the message is not cached, let's fetch it
-    channel.fetchMessage(packet.d.message_id).then(message => {
-        // Emojis can have identifiers of name:id format, so we have to account for that case as well
-        const emoji = packet.d.emoji.id
-            ? `${packet.d.emoji.name}:${packet.d.emoji.id}`
-            : packet.d.emoji.name;
-        // This gives us the reaction we need to emit the event properly, in top of the message object
-        const reaction = message.reactions.get(emoji);
-        // Adds the currently reacting user to the reaction's users collection.
-        if (reaction)
-            reaction.users.set(
-                packet.d.user_id,
-                bot.users.get(packet.d.user_id)
-            );
-        // Check which type of event it is before emitting
-        if (packet.t === 'MESSAGE_REACTION_ADD') {
-            bot.emit(
-                'messageReactionAdd',
-                reaction,
-                bot.users.get(packet.d.user_id)
-            );
-        }
-        if (packet.t === 'MESSAGE_REACTION_REMOVE') {
-            bot.emit(
-                'messageReactionRemove',
-                reaction,
-                bot.users.get(packet.d.user_id)
-            );
-        }
-    });
-});
+bot.on('raw', rawReactionEmitter.bind(bot));
 
 const messageReaction = (reaction, user, type) => {
     // Only check correct channel

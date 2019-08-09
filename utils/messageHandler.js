@@ -3,7 +3,7 @@ const botconfig = require('../botconfig.json');
 const createEvent = require('../commands/createEvent');
 const { ROLE_GM, ROLE_OFFICER } = require('../constants/main');
 
-module.exports = function(msg) {
+module.exports = function messageHandler(msg) {
     const {bot, store} = this;
     const prefix = botconfig.prefix;
     const msgArray = msg.content.split(' ');

@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
 
 const { ADD_EVENT } = require('./../constants/redux.js');
-const CONSTS = require('../constants/main');
+const { EMOJI_ACCEPT, EMOJI_MAYBE, EMOJI_DECLINE } = require('../constants/main');
 const raidMap = require('../constants/raidMap');
 const generateMessage = require('../utils/generateMessage');
 
@@ -40,9 +40,9 @@ module.exports = (bot, msg, store) => {
         .send(eventembed)
         .then(sentMsg => {
             Promise.all([
-                sentMsg.react(CONSTS.EMOJI_ACCEPT),
-                sentMsg.react(CONSTS.EMOJI_MAYBE),
-                sentMsg.react(CONSTS.EMOJI_DECLINE),
+                sentMsg.react(EMOJI_ACCEPT),
+                sentMsg.react(EMOJI_MAYBE),
+                sentMsg.react(EMOJI_DECLINE),
             ]);
 
             store.dispatch({

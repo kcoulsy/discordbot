@@ -1,7 +1,14 @@
-const { createStore, applyMiddleware } = require('redux');
+const { createStore, applyMiddleware, combineReducers } = require('redux');
 const reducer = require('./reducer');
+const classMapReducer = require('./reducers/classMap');
+const specMapReducer = require('./reducers/specMap');
 const middleware = require('./middleware');
 
 module.exports = () => {
-    return createStore(reducer, applyMiddleware(middleware));
+    const rootReducer = combineReducers({
+        classMap: classMapReducer,
+        specMap: specMapReducer,
+        events: reducer
+    })
+    return createStore(rootReducer, applyMiddleware(middleware));
 }

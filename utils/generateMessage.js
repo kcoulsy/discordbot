@@ -7,7 +7,7 @@ const getClassIcon = (bot, className) => {
 const generateMessage = (bot, event, close) => {
     const { attending, description } = event;
     let message = `${description}\n`;
-    // console.log(event);
+
     if (attending) {
         Object.entries(attending).map(([status, role]) => {
             message += `\n**${status}:**\n`;

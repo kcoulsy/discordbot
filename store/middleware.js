@@ -6,10 +6,10 @@ const {
 } = require('../constants/redux');
 
 module.exports = store => next => action => {
-    const state = store.getState();
+    const { events } = store.getState();
 
     if (action.type === ADD_PLAYER_TO_EVENT) {
-        state.forEach(event => {
+        events.forEach(event => {
             if (event.id != action.eventId) return;
 
             if (event.attending) {
@@ -40,9 +40,11 @@ module.exports = store => next => action => {
     }
     next(action);
 
+    // we need to refetch the events as they may have changed
+    state = store.getState();
+
     if (action.type !== LOAD_INITIAL_STATE) {
         console.log('Writing to store.json');
-        console.log('############# WRITING ', store.getState());
-        fs.writeFileSync('store.json', JSON.stringify(store.getState()));
+        fs.writeFileSync('store.json', JSON.stringify(state.events));
     }
 };

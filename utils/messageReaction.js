@@ -12,7 +12,7 @@ const { REMOVE_EVENT } = require('../constants/redux');
 const generateMessage = require('./generateMessage');
 
 module.exports = function messageReaction(reaction, user) {
-    const { bot, store, type, classRoleMap, specRoleMap } = this;
+    const { bot, store, type } = this;
     // Only check correct channel
     if (reaction.message.channel.name !== CHANNEL_NAME) {
         return;
@@ -29,6 +29,7 @@ module.exports = function messageReaction(reaction, user) {
         .find('name', 'Prototype')
         .fetchMember(user.id)
         .then(user => {
+            const { classMap, specMap, events } = store.getState();
             let status;
             let playerRole;
             let playerClass;
@@ -39,9 +40,7 @@ module.exports = function messageReaction(reaction, user) {
                         [ROLE_OFFICER, ROLE_GM].includes(user.highestRole.name)
                     ) {
                         // reaction.message.channel.sendMessage('Closing that one');
-                        const ev = store
-                            .getState()
-                            .find(event => event.id === messageId);
+                        const ev = events.find(event => event.id === messageId);
                         if (!ev) return;
                         reaction.message.edit(
                             new Discord.RichEmbed()
@@ -72,11 +71,11 @@ module.exports = function messageReaction(reaction, user) {
                     break;
             }
             user._roles.forEach(roleId => {
-                if (specRoleMap[roleId]) {
-                    playerRole = specRoleMap[roleId];
+                if (specMap[roleId]) {
+                    playerRole = specMap[roleId];
                 }
-                if (classRoleMap[roleId]) {
-                    playerClass = classRoleMap[roleId];
+                if (classMap[roleId]) {
+                    playerClass = classMap[roleId];
                 }
             });
             if (!playerRole || !playerClass) {
@@ -85,6 +84,7 @@ module.exports = function messageReaction(reaction, user) {
                 );
                 return;
             }
+
             store.dispatch({
                 type,
                 eventId: messageId,
@@ -93,10 +93,13 @@ module.exports = function messageReaction(reaction, user) {
                 playerRole,
                 playerClass,
             });
-            const ev = store.getState().find(event => event.id === messageId);
+
+            // Refetching events from store after dispatch
+            const ev = store.getState().events.find(event => event.id === messageId);
             if (!ev) {
                 return;
             }
+
             reaction.message.edit(
                 new Discord.RichEmbed()
                     .setThumbnail(ev.event.img)

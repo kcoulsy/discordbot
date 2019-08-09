@@ -10,7 +10,7 @@ const initialState = [];
 
 module.exports = function reducer(state = initialState, action) {
     const { status, eventId, playerRole, playerClass, playerId } = action;
-    console.log('############ ACTION', action);
+
     switch (action.type) {
         case LOAD_INITIAL_STATE:
             return action.initialState;

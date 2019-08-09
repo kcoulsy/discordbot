@@ -20,7 +20,7 @@ module.exports = (bot, msg, store) => {
         );
     }
 
-    if (store.getState().length >= 10) {
+    if (store.getState().events.length >= 10) {
         return msg.channel.send(
             `You may only have 5 events at one time.`
         );

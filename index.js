@@ -16,6 +16,7 @@ const store = createStore();
 const createEvent = require('./commands/createEvent');
 const generateMessage = require('./utils/generateMessage');
 const rawReactionEmitter = require('./utils/rawReactionEmitter');
+const messageHandler = require('./utils/messageHandler');
 
 const {
     REMOVE_EVENT,
@@ -56,24 +57,7 @@ bot.on('ready', () => {
     bot.user.setActivity('$');
 });
 
-bot.on('message', msg => {
-    let prefix = botconfig.prefix;
-    let msgArray = msg.content.split(' ');
-    let cmd = msgArray[0];
-
-    if (
-        ![CONSTS.ROLE_OFFICER, CONSTS.ROLE_GM].includes(msg.member.highestRole.name)
-    ) {
-        return;
-    }
-
-    switch (cmd) {
-        case `${prefix}event`:
-            return createEvent(bot, msg, store);
-        default:
-            break;
-    }
-});
+bot.on('message', messageHandler.bind({bot, store}));
 
 // Since the bot may restart, messages may not be cached.
 // So we are listening for the raw events of all reactions

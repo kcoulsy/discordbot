@@ -4,7 +4,7 @@ const {
     ADD_PLAYER_TO_EVENT,
     REMOVE_PLAYER_FROM_EVENT,
     LOAD_INITIAL_STATE,
-} = require('../constants/redux');
+} = require('../../constants/redux');
 
 const initialState = [];
 

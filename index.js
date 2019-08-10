@@ -23,7 +23,7 @@ bot.on('message', messageHandler.bind({ bot, store }));
 // Since the bot may restart, messages may not be cached.
 // So we are listening for the raw events of all reactions
 // Only in the correct channel.
-bot.on('raw', rawReactionEmitter.bind(bot));
+bot.on('raw', rawReactionEmitter.bind({bot}));
 
 // Handles reaction addition - adds sign up to events
 bot.on(

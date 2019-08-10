@@ -1,11 +1,12 @@
 const { CHANNEL_NAME } = require('../constants/main');
 
 module.exports = function rawReactionEmitter(packet) {
+    const { bot } = this;
     // We don't want this to run on unrelated packets
     if (!['MESSAGE_REACTION_ADD', 'MESSAGE_REACTION_REMOVE'].includes(packet.t))
         return;
     // Grab the channel to check the message from
-    const channel = this.channels.get(packet.d.channel_id);
+    const channel = bot.channels.get(packet.d.channel_id);
 
     // Check we are in the correct channel
     if (channel.name !== CHANNEL_NAME) return;
@@ -18,27 +19,27 @@ module.exports = function rawReactionEmitter(packet) {
         const emoji = packet.d.emoji.id
             ? `${packet.d.emoji.name}:${packet.d.emoji.id}`
             : packet.d.emoji.name;
-        // This gives us the reaction we need to emit the event properly, in top of the message object
+        // bot gives us the reaction we need to emit the event properly, in top of the message object
         const reaction = message.reactions.get(emoji);
         // Adds the currently reacting user to the reaction's users collection.
         if (reaction)
             reaction.users.set(
                 packet.d.user_id,
-                this.users.get(packet.d.user_id)
+                bot.users.get(packet.d.user_id)
             );
         // Check which type of event it is before emitting
         if (packet.t === 'MESSAGE_REACTION_ADD') {
-            this.emit(
+            bot.emit(
                 'messageReactionAdd',
                 reaction,
-                this.users.get(packet.d.user_id)
+                bot.users.get(packet.d.user_id)
             );
         }
         if (packet.t === 'MESSAGE_REACTION_REMOVE') {
-            this.emit(
+            bot.emit(
                 'messageReactionRemove',
                 reaction,
-                this.users.get(packet.d.user_id)
+                bot.users.get(packet.d.user_id)
             );
         }
     });

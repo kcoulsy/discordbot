@@ -9,12 +9,13 @@ const generateMessage = (bot, event, close) => {
     let message = `${description}\n`;
 
     if (attending) {
+        entries = Object.entries(attending);
         Object.entries(attending).map(([status, role]) => {
             message += `\n**${status}:**\n`;
             Object.entries(role).map(([playerRole, playerClasses]) => {
                 message += `${playerRole}\n`;
                 Object.entries(playerClasses).map(([playerClass, players]) => {
-                    message += `${getClassIcon(bot, playerClass)}: `;
+                    message += `${getClassIcon(bot, playerClass)} (${players.length}): `;
                     players.map(playerId => {
                         const user = bot.users.get(playerId);
                         message += `${user}`;
